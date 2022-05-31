@@ -1,8 +1,9 @@
 package config
 
 type GeneralConfig struct {
-	Port   int  `toml:"Port"`
-	Filter bool `toml:"Filter"`
+	Port     int    `toml:"Port"`
+	Filter   bool   `toml:"Filter"`
+	TimeZone string `toml:"TimeZone"`
 }
 
 type BotConfig struct {
@@ -34,10 +35,15 @@ type MsgConfig struct {
 	EventFormatSimplePlayerChat       string `toml:"EventFormatSimplePlayerChat"`
 }
 
+type SecretConfig struct {
+	SteamAPIKey string `toml:"SteamAPIKey"`
+}
+
 type Config_t struct {
 	General  GeneralConfig
 	Bot      BotConfig
 	Database DatabaseConfig
 	UI       UIConfig
 	Messages MsgConfig
+	Secrets  SecretConfig
 }

@@ -2,13 +2,17 @@ package protocol
 
 import (
 	"encoding/binary"
+	"errors"
 	"fmt"
-	"time"
+	"io/ioutil"
+	"net/http"
 	"strings"
+	"time"
 
 	"github.com/bwmarrin/discordgo"
-	"github.com/rumblefrog/source-chat-relay/server/packet"
 	"github.com/rumblefrog/source-chat-relay/server/config"
+	"github.com/rumblefrog/source-chat-relay/server/packet"
+	"github.com/tidwall/gjson"
 )
 
 type IdentificationType uint8
@@ -18,6 +22,14 @@ const (
 	IdentificationSteam
 	IdentificationDiscord
 	IdentificationTypeCount
+)
+
+type SteamAvatarType uint8
+
+const (
+	SteamAvatarSmall SteamAvatarType = iota
+	SteamAvatarMedium
+	SteamAvatarFull
 )
 
 type ChatMessage struct {
@@ -85,7 +97,9 @@ func (m *ChatMessage) Marshal() []byte {
 }
 
 func (m *ChatMessage) Plain() string {
-	return strings.ReplaceAll(strings.ReplaceAll(config.Config.Messages.EventFormatSimplePlayerChat, "%username%", m.Username), "%message%", m.Message)
+	replacer := strings.NewReplacer("%username%", m.Username, "%message%", m.Message, "%id%", m.ID)
+
+	return replacer.Replace(config.Config.Messages.EventFormatSimplePlayerChat)
 }
 
 func (m *ChatMessage) Embed() *discordgo.MessageEmbed {
@@ -94,17 +108,83 @@ func (m *ChatMessage) Embed() *discordgo.MessageEmbed {
 	// Convert to an int with length of 6
 	color := int(binary.LittleEndian.Uint32(idColorBytes[len(idColorBytes)-6:])) / 10000
 
-	return &discordgo.MessageEmbed{
-		Color:       color,
-		Description: m.Message,
-		Timestamp:   time.Now().Format(time.RFC3339),
-		Author: &discordgo.MessageEmbedAuthor{
-			Name: m.Username,
-			URL:  m.IDType.FormatURL(m.ID),
-		},
-		Footer: &discordgo.MessageEmbedFooter{
-			Text: fmt.Sprintf("%s | %s", m.BaseMessage.EntityName, m.ID),
-		},
+	loc, err := time.LoadLocation(config.Config.General.TimeZone)
+
+	timestamp := ""
+
+	if err == nil {
+		timestamp = time.Now().In(loc).Format(time.RFC3339)
+	} else {
+		timestamp = time.Now().Format(time.RFC3339)
+	}
+
+	switch m.IDType {
+	case IdentificationSteam:
+		avatarURL, err := m.SteamAvatarURL(SteamAvatarMedium)
+
+		if err == nil {
+			return &discordgo.MessageEmbed{
+				Color:       color,
+				Description: m.Message,
+				Timestamp:   timestamp,
+				Author: &discordgo.MessageEmbedAuthor{
+					Name: m.Username,
+					URL:  m.IDType.FormatURL(m.ID),
+				},
+				Thumbnail: &discordgo.MessageEmbedThumbnail{
+					URL:    avatarURL,
+					Width:  48,
+					Height: 48,
+				},
+				Footer: &discordgo.MessageEmbedFooter{
+					Text: fmt.Sprintf("%s | %s", m.BaseMessage.EntityName, m.ID),
+				},
+			}
+		}
+
+		fallthrough
+	default:
+		return &discordgo.MessageEmbed{
+			Color:       color,
+			Description: m.Message,
+			Timestamp:   timestamp,
+			Author: &discordgo.MessageEmbedAuthor{
+				Name: m.Username,
+				URL:  m.IDType.FormatURL(m.ID),
+			},
+			Footer: &discordgo.MessageEmbedFooter{
+				Text: fmt.Sprintf("%s | %s", m.BaseMessage.EntityName, m.ID),
+			},
+		}
+	}
+}
+
+func (m *ChatMessage) SteamAvatarURL(t SteamAvatarType) (string, error) {
+	if m.IDType != IdentificationSteam {
+		return "", errors.New("avatar is currently supported on only steam")
+	}
+
+	resp, err := http.Get(fmt.Sprintf("https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/?key=%s&steamids=%s", config.Config.Secrets.SteamAPIKey, m.ID))
+	if err != nil {
+		return "", err
+	}
+
+	defer resp.Body.Close()
+
+	rawJSON, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+
+	switch t {
+	case SteamAvatarSmall:
+		return gjson.Get(string(rawJSON), "response.players.0.avatar").String(), nil
+	case SteamAvatarMedium:
+		return gjson.Get(string(rawJSON), "response.players.0.avatarmedium").String(), nil
+	case SteamAvatarFull:
+		return gjson.Get(string(rawJSON), "response.players.0.avatarfull").String(), nil
+	default:
+		return gjson.Get(string(rawJSON), "response.players.0.avatar").String(), nil
 	}
 }
 

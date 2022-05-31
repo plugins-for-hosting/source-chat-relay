@@ -8,6 +8,10 @@ Port = 57452
 # Note: can be expensive with a lot of regexes
 Filter = false
 
+# Time Zone
+# If TimeZone is set, then embed will have timestamp based on this timezone
+TimeZone = "Asia/Seoul"
+
 [Bot]
 # Bot token
 # You may obtain this at https://discordapp.com/developers/applications/
@@ -69,4 +73,9 @@ EventFormatSimplePlayerConnect = "Player Connected: %data%"
 EventFormatSimplePlayerDisconnect = "Player Disconnected: %data%"
 
 # Player chat format if SimpleMessage is enabled
-EventFormatSimplePlayerChat = "%username%: %message%"
+EventFormatSimplePlayerChat = "%username%[%id%]: %message%"
+
+[Secrets]
+
+# Steam API Key for retrieving steam avatar URL
+SteamAPIKey = "Steam API Key"

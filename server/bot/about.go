@@ -16,19 +16,19 @@ func aboutCommand(ctx *exrouter.Context) {
 		},
 		Color: 0x3395D6,
 		Fields: []*discordgo.MessageEmbedField{
-			&discordgo.MessageEmbedField{
+			{
 				Name:  "SCR Version",
 				Value: config.SCRVER,
 			},
-			&discordgo.MessageEmbedField{
+			{
 				Name:  "Repository",
 				Value: "https://github.com/rumblefrog/source-chat-relay/",
 			},
-			&discordgo.MessageEmbedField{
+			{
 				Name:  "Incoming Traffic",
 				Value: relay.Instance.Statistics.Incoming.String(),
 			},
-			&discordgo.MessageEmbedField{
+			{
 				Name:  "Outgoing Traffic",
 				Value: relay.Instance.Statistics.Outgoing.String(),
 			},

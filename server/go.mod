@@ -15,6 +15,7 @@ require (
 	github.com/rogpeppe/go-internal v1.3.1 // indirect
 	github.com/sirupsen/logrus v1.4.2
 	github.com/stretchr/testify v1.4.0 // indirect
+	github.com/tidwall/gjson v1.14.1
 	golang.org/x/crypto v0.0.0-20190829043050-9756ffdc2472 // indirect
 	golang.org/x/sys v0.0.0-20190904154756-749cb33beabd // indirect
 	google.golang.org/appengine v1.6.2 // indirect
