@@ -8,25 +8,24 @@ import (
 
 func Listen() {
 	for {
-		select {
-		case message := <-relay.Instance.Bot:
-			for _, guild := range RelayBot.State.Guilds {
-				for _, channel := range guild.Channels {
-					tEntity, err := entity.GetEntity(channel.ID)
+		message := <-relay.Instance.Bot
 
-					if err != nil {
-						continue
-					}
+		for _, guild := range RelayBot.State.Guilds {
+			for _, channel := range guild.Channels {
+				tEntity, err := entity.GetEntity(channel.ID)
 
-					if channel.ID != message.Author() &&
-						tEntity.CanReceiveType(message.Type()) &&
-						tEntity.ReceiveIntersectsWith(entity.DeliverableSendChannels(message)) {
-						if !config.Config.Bot.SimpleMessage {
-							RelayBot.ChannelMessageSendEmbed(channel.ID, message.Embed())
-						} else {
-							content := TransformMentions(RelayBot, channel.ID, message.Plain())
-							RelayBot.ChannelMessageSend(channel.ID, content)
-						}
+				if err != nil {
+					continue
+				}
+
+				if channel.ID != message.Author() &&
+					tEntity.CanReceiveType(message.Type()) &&
+					tEntity.ReceiveIntersectsWith(entity.DeliverableSendChannels(message)) {
+					if !config.Config.Bot.SimpleMessage {
+						RelayBot.ChannelMessageSendEmbed(channel.ID, message.Embed())
+					} else {
+						content := TransformMentions(RelayBot, channel.ID, message.Plain())
+						RelayBot.ChannelMessageSend(channel.ID, content)
 					}
 				}
 			}

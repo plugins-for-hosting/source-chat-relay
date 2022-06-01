@@ -1,11 +1,11 @@
 package bot
 
 import (
-	"strings"
-
 	"github.com/Necroforger/dgrouter"
 	"github.com/Necroforger/dgrouter/exrouter"
 	"github.com/sirupsen/logrus"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/rumblefrog/source-chat-relay/server/config"
@@ -66,11 +66,13 @@ func Initialize() {
 				displayname = member.Nick
 			}
 
+			caser := cases.Title(language.Und)
+
 			message := &protocol.ChatMessage{
 				BaseMessage: protocol.BaseMessage{
 					Type:       protocol.MessageChat,
 					SenderID:   m.ChannelID,
-					EntityName: strings.Title(channel.Name),
+					EntityName: caser.String(channel.Name),
 				},
 				IDType:   protocol.IdentificationDiscord,
 				ID:       m.Author.ID,
